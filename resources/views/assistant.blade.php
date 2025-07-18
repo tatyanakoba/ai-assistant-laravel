@@ -43,11 +43,15 @@
 
     <div id="step4" class="hidden bg-yellow-100 p-4 rounded shadow whitespace-pre-wrap">
         <p><strong>AI:</strong> Great! Now I will generate <strong id="selectedAction"></strong> based on the persona.</p>
-        <pre class="mt-2 font-mono text-sm text-gray-800" id="actionResult"></pre>
+        <article id="actionResult" class="prose prose-sm prose-pre:bg-transparent prose-pre:p-0 prose-headings:font-semibold prose-p:my-2 mt-4 text-gray-900 max-w-none"></article>
     </div>
 </div>
 
 <script>
+    tailwind.config = {
+        plugins: [tailwindcss.typography]
+    }
+    
     let personaName = '';
     function confirmName() {
         personaName = document.getElementById('personaName').value;
