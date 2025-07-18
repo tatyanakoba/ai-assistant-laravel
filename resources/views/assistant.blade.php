@@ -31,13 +31,14 @@
         <p id="formattedPersona"></p>
         <p class="mt-4">What would you like to do next?</p>
 
-        <div class="flex flex-wrap gap-2 mt-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
             @foreach (['Create Ads', 'Create Keywords', 'Create Display URLs', 'Create Callouts', 'Create Extensions', 'Create Sitelinks'] as $action)
-                <button onclick="selectAction('{{ $action }}')" class="px-3 py-1 bg-purple-600 text-white rounded">
+                <button onclick="selectAction('{{ $action }}')" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded transition">
                     {{ $action }}
                 </button>
             @endforeach
         </div>
+
     </div>
 
     <div id="step4" class="hidden bg-yellow-100 p-4 rounded shadow whitespace-pre-wrap">
