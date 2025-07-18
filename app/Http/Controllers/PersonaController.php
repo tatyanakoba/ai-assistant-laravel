@@ -79,6 +79,6 @@ class PersonaController extends Controller
      */
     public function show(Persona $persona)
     {
-        return Inertia::render('PersonaForm');
+        return view('assistant');
     }
 }
