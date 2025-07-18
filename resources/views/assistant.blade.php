@@ -1,56 +1,102 @@
 @extends('layouts.app')
-
 @section('content')
     <div class="max-w-2xl mx-auto mt-10 space-y-4">
-        {{-- Step 1: Ask for persona name --}}
-        @if (!session('step') || session('step') === 1)
-            <div class="bg-gray-100 p-4 rounded shadow">
-                <p><strong>AI:</strong> Hi, please tell me the name of the person I should become to create your buyer persona.</p>
+        <div class="bg-gray-100 p-4 rounded shadow">
+            <p><strong>AI:</strong> Hi, please tell me the name of the person I should become to create your buyer persona.</p>
+        </div>
+
+        <input id="personaName" type="text" class="w-full border p-2 rounded" placeholder="Please become a person named..." />
+
+        <button onclick="confirmName()" class="bg-blue-600 text-white px-4 py-2 rounded">
+            Confirm Name
+        </button>
+
+        <div id="step2" class="hidden bg-gray-100 p-4 rounded shadow">
+            <p><strong>AI:</strong> I am now <span id="personaLabel"></span>, please paste the characteristics I should have.</p>
+            <textarea id="personaDetails" class="w-full border p-2 rounded mt-2" rows="8" placeholder="Paste Q&A about your persona here..."></textarea>
+            <button onclick="sendPersonaDetails()" class="bg-green-600 text-white px-4 py-2 rounded mt-2">
+                Submit Persona Info
+            </button>
+        </div>
+
+        <div id="step3" class="hidden bg-gray-100 p-4 rounded shadow whitespace-pre-wrap">
+            <p><strong>AI:</strong> Here are the characteristics I have:</p>
+            <p id="formattedPersona"></p>
+            <p class="mt-4">What would you like to do next?</p>
+
+            <div class="flex flex-wrap gap-2 mt-2">
+                @foreach (['Create Ads', 'Create Keywords', 'Create Display URLs', 'Create Callouts', 'Create Extensions', 'Create Sitelinks'] as $action)
+                    <button onclick="selectAction('{{ $action }}')" class="px-3 py-1 bg-purple-600 text-white rounded">
+                        {{ $action }}
+                    </button>
+                @endforeach
             </div>
+        </div>
 
-            <form method="POST" action="{{ route('persona.confirm-name') }}">
-                @csrf
-                <input type="text" name="persona_name" class="w-full border p-2 rounded my-2" placeholder="Please become a person named..." required>
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Confirm Name</button>
-            </form>
+        <div id="step4" class="hidden bg-yellow-100 p-4 rounded shadow whitespace-pre-wrap">
+            <p><strong>AI:</strong> Great! Now I will generate <strong id="selectedAction"></strong> based on the persona.</p>
+            <pre class="mt-2 font-mono text-sm text-gray-800" id="actionResult"></pre>
+        </div>
+    </div>
 
-        @elseif (session('step') === 2)
-            <div class="bg-gray-100 p-4 rounded shadow">
-                <p><strong>AI:</strong> I am now <strong>{{ session('persona_name') }}</strong>, please paste the characteristics I should have.</p>
-            </div>
+    <script>
+        let personaName = '';
+        function confirmName() {
+            personaName = document.getElementById('personaName').value;
+            if (personaName.trim()) {
+                document.getElementById('personaLabel').innerText = personaName;
+                document.getElementById('step2').classList.remove('hidden');
+            }
+        }
 
-            <form method="POST" action="{{ route('persona.submit') }}">
-                @csrf
-                <textarea name="persona_details" class="w-full border p-2 rounded my-2" rows="8" placeholder="Paste Q&A about your persona here..." required></textarea>
-                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Submit Persona Info</button>
-            </form>
+        async function sendPersonaDetails() {
+            const details = document.getElementById('personaDetails').value;
+            try {
+                const res = await fetch('/persona', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        name: personaName,
+                        details: details
+                    })
+                });
 
-        @elseif (session('step') === 3)
-            <div class="bg-gray-100 p-4 rounded shadow whitespace-pre-wrap">
-                <p><strong>AI:</strong> Here are the characteristics I have:</p>
-                <p>{{ session('formatted_persona') }}</p>
-                <p class="mt-4">What would you like to do next?</p>
+                const data = await res.json();
+                document.getElementById('formattedPersona').innerText = data.formatted;
+                document.getElementById('step3').classList.remove('hidden');
+            } catch (err) {
+                alert('❌ Failed to send to AI:\n' + err.message);
+            }
+        }
 
-                <form method="POST" action="{{ route('persona.generate') }}" class="mt-2 space-y-2">
-                    @csrf
-                    <input type="hidden" name="persona_name" value="{{ session('persona_name') }}">
-                    <input type="hidden" name="persona_details" value="{{ session('persona_details') }}">
+        async function selectAction(action) {
+            document.getElementById('selectedAction').innerText = action;
+            document.getElementById('step4').classList.remove('hidden');
 
-                    @foreach ([
-                      'Create Ads', 'Create Keywords', 'Create Display URLs',
-                      'Create Callouts', 'Create Extensions', 'Create Sitelinks'
-                    ] as $action)
-                        <button name="action" value="{{ $action }}" class="px-3 py-1 bg-purple-600 text-white rounded">{{ $action }}</button>
-                    @endforeach
-                </form>
+            const details = document.getElementById('personaDetails').value;
 
-                @elseif (session('step') === 4)
-                    <div class="bg-yellow-100 p-4 rounded shadow whitespace-pre-wrap">
-                        <p><strong>AI:</strong> Great! Now I will generate <strong>{{ session('selected_action') }}</strong> based on the persona.</p>
-                        <p class="mt-2 font-mono text-sm text-gray-800">
-                            {{ session('action_result') }}
-                        </p>
-                    </div>
-                @endif
-            </div>
+            try {
+                const res = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        persona_name: personaName,
+                        persona_details: details
+                    })
+                });
+
+                const data = await res.json();
+                document.getElementById('actionResult').innerText = data.result;
+            } catch (err) {
+                document.getElementById('actionResult').innerText = '❌ Failed to generate content.';
+            }
+        }
+    </script>
 @endsection
