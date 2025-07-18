@@ -43,16 +43,13 @@
 
     <div id="step4" class="hidden bg-yellow-100 p-4 rounded shadow whitespace-pre-wrap">
         <p><strong>AI:</strong> Great! Now I will generate <strong id="selectedAction"></strong> based on the persona.</p>
-        <article id="actionResult" class="prose prose-sm prose-pre:bg-transparent prose-pre:p-0 prose-headings:font-semibold prose-p:my-2 mt-4 text-gray-900 max-w-none"></article>
+        <pre id="actionResult" class="mt-4 p-4 bg-white rounded shadow border text-gray-900 leading-relaxed whitespace-pre-wrap font-sans text-sm"></pre>
     </div>
 </div>
 
 <script>
-    tailwind.config = {
-        plugins: [tailwindcss.typography]
-    }
-    
     let personaName = '';
+
     function confirmName() {
         personaName = document.getElementById('personaName').value;
         if (personaName.trim()) {
@@ -111,5 +108,6 @@
         }
     }
 </script>
+
 </body>
 </html>
