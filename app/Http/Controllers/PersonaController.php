@@ -20,8 +20,19 @@ class PersonaController extends Controller
         $name = $request->input('name');
         $details = $request->input('details');
 
-        $prompt = "Please take on the persona of {$name}. Here are the traits and answers:\n\n{$details}\n\nRespond by listing the traits as if you are {$name}.";
+        $prompt = <<<EOT
+You are now the persona named "{$name}". I will give you several pieces of information in sequence.
 
+1. Here are the answers related to the market, product, and pain points:
+{$details}
+
+Now, please prompt me for the demographic section.
+Once I reply, prompt me for the psychographic section.
+Then summarize all provided information as if you are {$name}, using the first person ("I").
+
+At the end, ask: "What would you like to do next?"
+Options: Create ads, Create keywords, Create display URLs, Create callouts, Create extensions, Create sitelinks.
+EOT;
         try {
             $response = OpenAI::chat()->create([
                 'model' => 'gpt-4o-mini',
