@@ -43,6 +43,14 @@
 
     <div id="step4" class="hidden bg-yellow-100 p-4 rounded shadow whitespace-pre-wrap">
         <p><strong>AI:</strong> Great! Now I will generate <strong id="selectedAction"></strong> based on the persona.</p>
+
+        <textarea id="actionSpecifics" class="w-full border p-2 rounded mt-4" rows="3"
+                  placeholder="Are there any specifics for this action I should follow? (optional)"></textarea>
+
+        <button onclick="submitAction()" class="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">
+            Generate Content
+        </button>
+
         <pre id="actionResult" class="mt-4 p-4 bg-white rounded shadow border text-gray-900 leading-relaxed whitespace-pre-wrap font-sans text-sm"></pre>
     </div>
 </div>
@@ -81,11 +89,15 @@
         }
     }
 
-    async function selectAction(action) {
+    function selectAction(action) {
         document.getElementById('selectedAction').innerText = action;
         document.getElementById('step4').classList.remove('hidden');
+    }
 
+    async function submitAction() {
+        const action = document.getElementById('selectedAction').innerText;
         const details = document.getElementById('personaDetails').value;
+        const specifics = document.getElementById('actionSpecifics').value;
 
         try {
             const res = await fetch('/generate', {
@@ -97,7 +109,8 @@
                 body: JSON.stringify({
                     action: action,
                     persona_name: personaName,
-                    persona_details: details
+                    persona_details: details,
+                    specifics: specifics
                 })
             });
 
@@ -107,6 +120,7 @@
             document.getElementById('actionResult').innerText = '❌ Failed to generate content.';
         }
     }
+
 </script>
 
 </body>

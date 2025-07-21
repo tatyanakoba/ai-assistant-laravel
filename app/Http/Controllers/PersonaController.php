@@ -58,13 +58,19 @@ EOT;
             'action' => 'required|string',
             'persona_name' => 'required|string',
             'persona_details' => 'required|string',
+            'specifics' => 'nullable|string',
         ]);
 
         $action = $request->input('action');
         $name = $request->input('persona_name');
         $details = $request->input('persona_details');
+        $specifics = $request->input('specifics');
 
-        $prompt = "Act as {$name}. Based on these traits:\n{$details}\nPlease generate {$action}.";
+        $specificsText = $specifics
+            ? "\n\nThe user has provided additional instructions for this action:\n{$specifics}"
+            : '';
+
+        $prompt = "Act as {$name}. Based on these traits:\n{$details}\nPlease generate {$action}.{$specificsText}";
 
         try {
             $response = OpenAI::chat()->create([
@@ -84,6 +90,7 @@ EOT;
             return response()->json(['result' => 'Error: ' . $e->getMessage()], 500);
         }
     }
+
 
     /**
      * Display the specified resource.
