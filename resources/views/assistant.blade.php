@@ -107,7 +107,6 @@
         document.getElementById('personaLabel').innerText = personaName;
         document.getElementById('step1').classList.remove('hidden');
     }
-    }
 
 
     function submitStep1() {
