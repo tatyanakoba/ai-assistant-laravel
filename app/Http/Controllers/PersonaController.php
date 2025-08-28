@@ -4,99 +4,140 @@ namespace App\Http\Controllers;
 
 use App\Models\Persona;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use OpenAI\Laravel\Facades\OpenAI;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
+use OpenAI\Laravel\Facades\OpenAI;
 
 class PersonaController extends Controller
 {
-    public function handlePersona(Request $request)
+    public function step(Request $request)
     {
         $request->validate([
+            'step' => 'required|in:1,2,3,summary,action',
             'name' => 'required|string',
-            'details' => 'required|string',
-        ]);
-
-        $name = $request->input('name');
-        $details = $request->input('details');
-
-        $prompt = <<<EOT
-You are now the persona named "{$name}". I will give you several pieces of information in sequence.
-
-1. Here are the answers related to the market, product, and pain points:
-{$details}
-
-Now, please prompt me for the demographic section.
-Once I reply, prompt me for the psychographic section.
-Then summarize all provided information as if you are {$name}, using the first person ("I").
-
-At the end, ask: "What would you like to do next?"
-Options: Create ads, Create keywords, Create display URLs, Create callouts, Create extensions, Create sitelinks.
-EOT;
-        try {
-            $response = OpenAI::chat()->create([
-                'model' => 'gpt-4o-mini',
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You are an expert marketing strategist.'],
-                    ['role' => 'user', 'content' => $prompt],
-                ],
-            ]);
-
-            return response()->json([
-                'formatted' => $response['choices'][0]['message']['content'],
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('OpenAI handlePersona Error: ' . $e->getMessage());
-            return response()->json(['error' => 'AI error: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function generateAction(Request $request)
-    {
-        $request->validate([
-            'action' => 'required|string',
-            'persona_name' => 'required|string',
-            'persona_details' => 'required|string',
+            'data' => 'nullable|string',
+            'action' => 'nullable|string',
             'specifics' => 'nullable|string',
         ]);
 
+        $step = $request->input('step');
+        $name = $request->input('name');
+        $data = $request->input('data');
         $action = $request->input('action');
-        $name = $request->input('persona_name');
-        $details = $request->input('persona_details');
         $specifics = $request->input('specifics');
 
-        $specificsText = $specifics
-            ? "\n\nThe user has provided additional instructions for this action:\n{$specifics}"
-            : '';
-
-        $prompt = "Act as {$name}. Based on these traits:\n{$details}\nPlease generate {$action}.{$specificsText}";
+        // Використовуємо сесію для тимчасового зберігання даних між кроками
+        $sessionKey = 'persona_' . md5($name);
+        $sessionData = Session::get($sessionKey, [
+            'name' => $name,
+            'part1' => '',
+            'part2' => '',
+            'part3' => '',
+            'history' => [],
+        ]);
 
         try {
-            $response = OpenAI::chat()->create([
-                'model' => 'gpt-4o-mini',
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You are an expert marketing strategist.'],
-                    ['role' => 'user', 'content' => $prompt],
-                ],
-            ]);
+            if ($step === '1') {
+                $sessionData['part1'] = $data;
+                Session::put($sessionKey, $sessionData);
+                return response()->json(['message' => 'Part 1 saved. Please proceed to Part 2.']);
+            }
 
-            return response()->json([
-                'result' => $response['choices'][0]['message']['content'],
-            ]);
+            if ($step === '2') {
+                $sessionData['part2'] = $data;
+                Session::put($sessionKey, $sessionData);
+                return response()->json(['message' => 'Part 2 saved. Please proceed to Part 3.']);
+            }
+
+            if ($step === '3') {
+                $sessionData['part3'] = $data;
+                Session::put($sessionKey, $sessionData);
+                return response()->json(['message' => 'Part 3 saved. Ready for summary.']);
+            }
+
+            if ($step === 'summary') {
+                $allDetails = <<<EOT
+Part 1:
+{$sessionData['part1']}
+
+Part 2:
+{$sessionData['part2']}
+
+Part 3:
+{$sessionData['part3']}
+EOT;
+
+                $prompt = <<<EOT
+You are now the persona named "{$name}". Here is the full persona information, broken into 3 parts:
+
+{$allDetails}
+
+Please summarize these characteristics as if you are {$name}, using first person ("I").
+Then ask: "What would you like to do next?"
+Options: Create ads, Create keywords, Create display URLs, Create callouts, Create extensions, Create sitelinks, Create audience.
+EOT;
+
+                $response = OpenAI::chat()->create([
+                    'model' => 'gpt-4o-mini',
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are an expert marketing strategist.'],
+                        ['role' => 'user', 'content' => $prompt],
+                    ],
+                ]);
+
+                $summary = $response['choices'][0]['message']['content'];
+                $sessionData['summary'] = $summary;
+                Session::put($sessionKey, $sessionData);
+
+                return response()->json(['summary' => $summary]);
+            }
+
+            if ($step === 'action') {
+                $allDetails = <<<EOT
+Part 1:
+{$sessionData['part1']}
+
+Part 2:
+{$sessionData['part2']}
+
+Part 3:
+{$sessionData['part3']}
+EOT;
+
+                $prompt = "Act as {$name}. Based on this persona:\n{$allDetails}\nGenerate {$action}.";
+
+                if (!empty($specifics)) {
+                    $prompt .= "\n\nPlease include the following specifics:\n{$specifics}";
+                }
+
+                $response = OpenAI::chat()->create([
+                    'model' => 'gpt-4o-mini',
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are an expert marketing strategist.'],
+                        ['role' => 'user', 'content' => $prompt],
+                    ],
+                ]);
+
+                $result = $response['choices'][0]['message']['content'];
+
+                // Зберігаємо в історії
+                $sessionData['history'][] = [
+                    'action' => $action,
+                    'specifics' => $specifics,
+                    'result' => $result,
+                ];
+                Session::put($sessionKey, $sessionData);
+
+                return response()->json([
+                    'result' => $result,
+                    'history' => $sessionData['history'],
+                    'nextPrompt' => 'Would you like to do anything else? [yes] [no]'
+                ]);
+            }
 
         } catch (\Exception $e) {
-            Log::error('OpenAI generateAction Error: ' . $e->getMessage());
-            return response()->json(['result' => 'Error: ' . $e->getMessage()], 500);
+            Log::error('Persona step error: ' . $e->getMessage());
+            return response()->json(['error' => 'AI error: ' . $e->getMessage()], 500);
         }
-    }
-
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Persona $persona)
-    {
-        return view('assistant');
     }
 }

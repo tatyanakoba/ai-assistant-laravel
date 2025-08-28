@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,10 +14,7 @@
     </div>
 
     <input id="personaName" type="text" class="w-full border p-2 rounded" placeholder="Please become a person named..." />
-
-    <button onclick="confirmName()" class="bg-blue-600 text-white px-4 py-2 rounded">
-        Confirm Name
-    </button>
+    <button onclick="confirmName()" class="bg-blue-600 text-white px-4 py-2 rounded mt-2">Confirm Name</button>
 
     <div id="step2" class="hidden bg-gray-100 p-4 rounded shadow">
         <p><strong>AI:</strong> I am now <span id="personaLabel"></span>, please paste the answers to the following questions regarding your persona that should have:</p>
@@ -26,37 +24,27 @@
             <li><strong>Pain Points:</strong> Describe the challenges or problems the customer has that are related to what you sell.</li>
         </ul>
         <textarea id="personaDetails" class="w-full border p-2 rounded mt-2" rows="8" placeholder="Paste Q&A about your persona here..."></textarea>
-        <button onclick="sendPersonaDetails()" class="bg-green-600 text-white px-4 py-2 rounded mt-2">
-            Submit Persona Info
-        </button>
+        <button onclick="sendPersonaDetails()" class="bg-green-600 text-white px-4 py-2 rounded mt-2">Submit Persona Info</button>
     </div>
 
     <div id="step3" class="hidden bg-gray-100 p-4 rounded shadow whitespace-pre-wrap">
         <p><strong>AI:</strong> Here are the characteristics I have:</p>
         <p id="formattedPersona"></p>
         <p class="mt-4">What would you like to do next?</p>
-
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-            @foreach (['Create Ads', 'Create Keywords', 'Create Display URLs', 'Create Callouts', 'Create Extensions', 'Create Sitelinks'] as $action)
+            @foreach (['Create Ads', 'Create Keywords', 'Create Display URLs', 'Create Callouts', 'Create Extensions', 'Create Sitelinks', 'Create Audience'] as $action)
                 <button onclick="selectAction('{{ $action }}')" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded transition">
                     {{ $action }}
                 </button>
             @endforeach
         </div>
-
     </div>
 
     <div id="step4" class="hidden bg-yellow-100 p-4 rounded shadow whitespace-pre-wrap">
         <p><strong>AI:</strong> Great! Now I will generate <strong id="selectedAction"></strong> based on the persona.</p>
-
-        <textarea id="actionSpecifics" class="w-full border p-2 rounded mt-4" rows="3"
-                  placeholder="Are there any specifics for this action I should follow? (optional)"></textarea>
-
-        <button onclick="submitAction()" class="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">
-            Generate Content
-        </button>
-
-        <pre id="actionResult" class="mt-4 p-4 bg-white rounded shadow border text-gray-900 leading-relaxed whitespace-pre-wrap font-sans text-sm"></pre>
+        <textarea id="actionSpecifics" class="w-full border p-2 rounded mt-4" rows="3" placeholder="Are there any specifics for this action I should follow? (optional)"></textarea>
+        <button onclick="submitAction()" class="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">Generate Content</button>
+        <div id="actionResultsHistory" class="mt-6 space-y-4"></div>
     </div>
 </div>
 
@@ -80,12 +68,8 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({
-                    name: personaName,
-                    details: details
-                })
+                body: JSON.stringify({ name: personaName, details: details })
             });
-
             const data = await res.json();
             document.getElementById('formattedPersona').innerText = data.formatted;
             document.getElementById('step3').classList.remove('hidden');
@@ -120,13 +104,45 @@
             });
 
             const data = await res.json();
-            document.getElementById('actionResult').innerText = data.result;
+
+            const resultContainer = document.createElement('div');
+            resultContainer.classList.add('mt-6', 'bg-white', 'rounded', 'shadow', 'p-4', 'border');
+
+            const title = document.createElement('h3');
+            title.classList.add('text-lg', 'font-bold', 'mb-2');
+            title.innerText = `Generated ${action}`;
+
+            const content = document.createElement('pre');
+            content.classList.add('whitespace-pre-wrap', 'text-gray-900', 'text-sm');
+            content.innerText = data.result;
+
+            resultContainer.appendChild(title);
+            resultContainer.appendChild(content);
+
+            const followUp = document.createElement('div');
+            followUp.classList.add('mt-4');
+            followUp.innerHTML = `
+                <p class="mt-4 font-medium">Would you like to do anything else?</p>
+                <button onclick="restartActions()" class="mt-2 mr-2 bg-blue-600 text-white px-3 py-1 rounded">Yes</button>
+                <button onclick="endSession()" class="mt-2 bg-gray-400 text-white px-3 py-1 rounded">No</button>
+            `;
+            resultContainer.appendChild(followUp);
+
+            document.getElementById('actionResultsHistory').appendChild(resultContainer);
+            document.getElementById('actionSpecifics').value = '';
+
         } catch (err) {
-            document.getElementById('actionResult').innerText = '❌ Failed to generate content.';
+            alert('❌ Failed to generate content:\n' + err.message);
         }
     }
 
-</script>
+    function restartActions() {
+        document.getElementById('step4').scrollIntoView({ behavior: 'smooth' });
+    }
 
+    function endSession() {
+        alert('Thank you! Session complete.');
+    }
+</script>
 </body>
 </html>
