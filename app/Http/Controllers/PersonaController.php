@@ -10,6 +10,48 @@ use OpenAI\Laravel\Facades\OpenAI;
 
 class PersonaController extends Controller
 {
+    public function handlePersona(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'details' => 'required|string',
+        ]);
+
+        $name = $request->input('name');
+        $details = $request->input('details');
+
+        $prompt = <<<EOT
+You are now the persona named "{$name}". I will give you several pieces of information in sequence.
+
+1. Here are the answers related to the market, product, and pain points:
+{$details}
+
+Now, please prompt me for the demographic section.
+Once I reply, prompt me for the psychographic section.
+Then summarize all provided information as if you are {$name}, using the first person ("I").
+
+At the end, ask: "What would you like to do next?"
+Options: Create ads, Create keywords, Create display URLs, Create callouts, Create extensions, Create sitelinks, Create audience.
+EOT;
+
+        try {
+            $response = OpenAI::chat()->create([
+                'model' => 'gpt-4o-mini',
+                'messages' => [
+                    ['role' => 'system', 'content' => 'You are an expert marketing strategist.'],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+            ]);
+
+            return response()->json([
+                'formatted' => $response['choices'][0]['message']['content'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('OpenAI handlePersona Error: ' . $e->getMessage());
+            return response()->json(['error' => 'AI error: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function step(Request $request)
     {
         $request->validate([
