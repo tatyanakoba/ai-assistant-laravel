@@ -26,7 +26,6 @@ class PersonaController extends Controller
         $action = $request->input('action');
         $specifics = $request->input('specifics');
 
-        // Використовуємо сесію для тимчасового зберігання даних між кроками
         $sessionKey = 'persona_' . md5($name);
         $sessionData = Session::get($sessionKey, [
             'name' => $name,
@@ -139,5 +138,10 @@ EOT;
             Log::error('Persona step error: ' . $e->getMessage());
             return response()->json(['error' => 'AI error: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function show()
+    {
+        return view('assistant');
     }
 }
