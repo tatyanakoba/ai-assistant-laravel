@@ -19,9 +19,9 @@
     <div id="step1" class="hidden bg-gray-100 p-4 rounded shadow">
         <p><strong>AI:</strong> I am now <span id="personaLabel"></span>, please paste the answers to the following questions:</p>
         <ul class="list-disc list-inside mt-2 text-sm text-gray-800">
-            <li><strong>Market</strong></li>
-            <li><strong>Product/Service</strong></li>
-            <li><strong>Pain Points</strong></li>
+            <li><strong>Market:</strong> In what sector or industry does the customer operate (e.g., finance, healthcare,     technology, manufacturing, etc.)?</li>
+            <li><strong>Product/Service:</strong> What products or services does your customer sell, make, or research?</li>
+            <li><strong>Pain Points:</strong> Describe the challenges or problems the customer has that are related to what you sell.</li>
         </ul>
         <textarea id="step1Input" class="w-full border p-2 rounded mt-2" rows="6"></textarea>
         <button onclick="submitStep1()" class="bg-green-600 text-white px-4 py-2 rounded mt-2">Submit Persona Info</button>
