@@ -103,29 +103,29 @@
 </div>
 
 <script>
-    let personaName = '', step1 = '', step2 = '', step3 = '';
-
-    function confirmName() {
-        personaName = document.getElementById('personaName').value.trim();
-        if (personaName) {
-            document.getElementById('personaLabel').innerText = personaName;
-            document.getElementById('step1').classList.remove('hidden');
-        }
+    if (personaName) {
+        document.getElementById('personaLabel').innerText = personaName;
+        document.getElementById('step1').classList.remove('hidden');
     }
+    }
+
 
     function submitStep1() {
         step1 = document.getElementById('step1Input').value.trim();
         if (step1) document.getElementById('step2').classList.remove('hidden');
     }
 
+
     function submitStep2() {
         step2 = document.getElementById('step2Input').value.trim();
         if (step2) document.getElementById('step3').classList.remove('hidden');
     }
 
+
     async function submitStep3() {
         step3 = document.getElementById('step3Input').value.trim();
         if (!step3) return;
+
 
         try {
             const res = await fetch('/persona', {
@@ -134,21 +134,31 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
-                body: JSON.stringify({ name: personaName, details: step1 + "\n" + step2 + "\n" + step3 })
+                body: JSON.stringify({
+                    name: personaName,
+                    details: `${step1}\n\n${step2}\n\n${step3}`
+                })
             });
 
+
             const data = await res.json();
-            document.getElementById('formattedPersona').innerText = data.formatted;
-            document.getElementById('step4').classList.remove('hidden');
+            if (data.formatted) {
+                document.getElementById('formattedPersona').innerText = data.formatted;
+                document.getElementById('step4').classList.remove('hidden');
+            } else {
+                throw new Error('No formatted data received');
+            }
         } catch (err) {
             alert('❌ Failed to send to AI:\n' + err.message);
         }
     }
 
+
     function selectAction(action) {
         document.getElementById('selectedAction').innerText = action;
         document.getElementById('step5').classList.remove('hidden');
     }
+
 
     async function submitAction() {
         const specifics = document.getElementById('actionSpecifics').value.trim();
@@ -162,10 +172,11 @@
                 body: JSON.stringify({
                     action: document.getElementById('selectedAction').innerText,
                     persona_name: personaName,
-                    persona_details: step1 + "\n" + step2 + "\n" + step3,
+                    persona_details: `${step1}\n\n${step2}\n\n${step3}`,
                     specifics: specifics
                 })
             });
+
 
             const data = await res.json();
             document.getElementById('actionResult').innerText = data.result + "\n\nWould you like help with anything else? [Yes] [No]";
