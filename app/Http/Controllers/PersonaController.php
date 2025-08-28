@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Persona;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -13,23 +12,36 @@ class PersonaController extends Controller
     {
         $request->validate([
             'name' => 'required|string',
-            'details' => 'required|string',
+            'part1' => 'required|string',
+            'part2' => 'required|string',
+            'part3' => 'required|string',
         ]);
 
         $name = $request->input('name');
-        $details = $request->input('details');
+        $part1 = $request->input('part1');
+        $part2 = $request->input('part2');
+        $part3 = $request->input('part3');
+
+        $fullDetails = <<<EOD
+Part 1: Market / Product / Pain Points
+{$part1}
+
+Part 2: Demographics
+{$part2}
+
+Part 3: Psychographics
+{$part3}
+EOD;
 
         $prompt = <<<EOT
-You are now the persona named "{$name}". I will give you several pieces of information in sequence.
+You are now the persona named "{$name}".
 
-1. Here are the answers related to the market, product, and pain points:
-{$details}
+I will give you several pieces of information in sequence.
 
-Now, please prompt me for the demographic section.
-Once I reply, prompt me for the psychographic section.
-Then summarize all provided information as if you are {$name}, using the first person ("I").
+{$fullDetails}
 
-At the end, ask: "What would you like to do next?"
+Now, summarize all the information above as if you are {$name}, using the first person ("I").
+Then ask: "What would you like to do next?"
 Options: Create ads, Create keywords, Create display URLs, Create callouts, Create extensions, Create sitelinks, Create audience.
 EOT;
 
@@ -45,6 +57,7 @@ EOT;
             return response()->json([
                 'formatted' => $response['choices'][0]['message']['content'],
             ]);
+
         } catch (\Exception $e) {
             Log::error('OpenAI handlePersona Error: ' . $e->getMessage());
             return response()->json(['error' => 'AI error: ' . $e->getMessage()], 500);
@@ -83,6 +96,7 @@ EOT;
             return response()->json([
                 'result' => $response['choices'][0]['message']['content'],
             ]);
+
         } catch (\Exception $e) {
             Log::error('OpenAI generateAction Error: ' . $e->getMessage());
             return response()->json(['result' => 'Error: ' . $e->getMessage()], 500);
