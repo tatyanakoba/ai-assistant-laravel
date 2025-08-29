@@ -133,8 +133,6 @@
     async function submitStep3() {
         step3 = document.getElementById('step3Input').value.trim();
         if (!step3) return;
-
-
         try {
             const res = await fetch('/persona', {
                 method: 'POST',
@@ -148,8 +146,8 @@
                 })
             });
 
-
             const data = await res.json();
+            console.log(data);
             if (data.formatted) {
                 document.getElementById('formattedPersona').innerText = data.formatted;
                 document.getElementById('step4').classList.remove('hidden');

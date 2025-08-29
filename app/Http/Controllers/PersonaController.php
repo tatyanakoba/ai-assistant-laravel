@@ -12,25 +12,14 @@ class PersonaController extends Controller
     {
         $request->validate([
             'name' => 'required|string',
-            'part1' => 'required|string',
-            'part2' => 'required|string',
-            'part3' => 'required|string',
+            'details' => 'required|string'
         ]);
 
         $name = $request->input('name');
-        $part1 = $request->input('part1');
-        $part2 = $request->input('part2');
-        $part3 = $request->input('part3');
+        $details = $request->input('details');
 
         $fullDetails = <<<EOD
-Part 1: Market / Product / Pain Points
-{$part1}
-
-Part 2: Demographics
-{$part2}
-
-Part 3: Psychographics
-{$part3}
+$details
 EOD;
 
         $prompt = <<<EOT
