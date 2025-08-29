@@ -111,6 +111,7 @@
             document.getElementById('personaLabel').innerText = personaName;
             document.getElementById('step1').classList.remove('hidden');
         }
+    }
     if (personaName) {
         document.getElementById('personaLabel').innerText = personaName;
         document.getElementById('step1').classList.remove('hidden');
