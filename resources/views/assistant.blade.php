@@ -103,6 +103,14 @@
 </div>
 
 <script>
+    let personaName = '', step1 = '', step2 = '', step3 = '';
+
+    function confirmName() {
+        personaName = document.getElementById('personaName').value.trim();
+        if (personaName) {
+            document.getElementById('personaLabel').innerText = personaName;
+            document.getElementById('step1').classList.remove('hidden');
+        }
     if (personaName) {
         document.getElementById('personaLabel').innerText = personaName;
         document.getElementById('step1').classList.remove('hidden');
